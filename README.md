@@ -51,6 +51,9 @@ A SketchUp plugin that automatically prompts you to log changes every time you s
 5. **Click "Log Change"** to save the entry
    - Or click "Skip" if you don't want to log this save
 
+> [!NOTE]
+> If you have **autosave enabled** in SketchUp's preferences, the commit log dialog will also appear after each autosave event. You can click "Skip" for autosaves and only log intentional save points, or you can use it to create automatic checkpoints at regular intervals.
+
 ### Log Entry Format
 
 Each entry includes:
