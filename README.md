@@ -128,6 +128,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Changelog
 
+### Version 1.1.1 (2025-11-28)
+- Added RuboCop configuration for code quality
+- Updated documentation for autosave feature
+
 ### Version 1.1.0 (2025-11-25)
 - Added Push to Master feature
 - Added Settings dialog for master file configuration
