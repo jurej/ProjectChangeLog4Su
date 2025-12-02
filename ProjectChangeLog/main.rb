@@ -2,11 +2,58 @@
 # License:: The MIT License (MIT)
 
 require 'fileutils'
-require 'csv'
 require_relative 'dialogs'
 
 module ProjectChangeLog4Su
   module ProjectChangeLog
+    
+    # Simple CSV helper methods to avoid dependency on Ruby's CSV library
+    # which has compatibility issues with SketchUp's Ruby environment
+    module CSVHelper
+      def self.escape_csv_value(value)
+        # Convert to string and escape double quotes by doubling them
+        value = value.to_s.gsub('"', '""')
+        # Wrap in quotes if it contains comma, newline, or quote
+        if value.include?(',') || value.include?("\n") || value.include?('"')
+          return "\"#{value}\""
+        end
+        value
+      end
+      
+      def self.parse_csv_line(line)
+        # Simple CSV parser for our three-column format
+        values = []
+        current = ''
+        in_quotes = false
+        i = 0
+        
+        while i < line.length
+          char = line[i]
+          
+          if char == '"'
+            if in_quotes && i + 1 < line.length && line[i+1] == '"'
+              # Double quote inside quoted field
+              current += '"'
+              i += 1
+            else
+              # Toggle quote state
+              in_quotes = !in_quotes
+            end
+          elsif char == ',' && !in_quotes
+            # Field separator
+            values << current
+            current = ''
+          else
+            current += char
+          end
+          
+          i += 1
+        end
+        
+        values << current
+        values
+      end
+    end
 
     # ------------------------------------------------------------------------
     # OBSERVERS
@@ -183,9 +230,11 @@ module ProjectChangeLog4Su
         timestamp = Time.now.strftime("%Y-%m-%d %H:%M:%S")
         username = ENV['USERNAME'] || ENV['USER'] || 'Unknown'
         
-        # Write CSV entry
-        CSV.open(log_path, 'a') do |csv|
-          csv << [timestamp, username, data['message']]
+        # Write CSV entry using our helper
+        File.open(log_path, 'a') do |file|
+          row = [timestamp, username, data['message']]
+          csv_line = row.map { |val| CSVHelper.escape_csv_value(val) }.join(',')
+          file.puts(csv_line)
         end
         puts "Log updated at #{log_path}"
         
@@ -226,10 +275,13 @@ module ProjectChangeLog4Su
         return
       end
 
-      # Read and parse CSV data
+      # Read and parse CSV data using our helper
       rows = []
-      CSV.foreach(log_path) do |row|
-        rows << row
+      File.open(log_path, 'r') do |file|
+        file.each_line do |line|
+          line.strip!
+          rows << CSVHelper.parse_csv_line(line) unless line.empty?
+        end
       end
 
       dialog = UI::HtmlDialog.new(
